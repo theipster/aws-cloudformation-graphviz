@@ -1,0 +1,8 @@
+digraph $title {
+  graph [nodesep=0.5, ranksep=1.5]
+  node [margin=0.15, shape=plaintext];
+
+  $nodes
+
+  $edges
+}
