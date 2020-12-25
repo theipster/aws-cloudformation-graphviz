@@ -1,0 +1,16 @@
+name: ci
+
+on:
+  pull_request:
+    branches:
+    - main
+
+jobs:
+  docker-build:
+    name: Docker build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Run docker build
+        run: docker build .
