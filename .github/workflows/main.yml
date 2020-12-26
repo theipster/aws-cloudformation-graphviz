@@ -1,0 +1,30 @@
+name: main
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  ghcr-push:
+    env:
+      REGISTRY: ghcr.io
+    name: GitHub Container Registry push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Login
+        run: echo ${{ secrets.GHCR_TOKEN }} | \
+          docker login ${{ env.REGISTRY }} -u $GITHUB_ACTOR --password-stdin
+
+      - name: Build (and tag)
+        run: docker build . \
+          --tag ${{ env.REGISTRY }}/$GITHUB_REPOSITORY:$GITHUB_SHA \
+          --tag ${{ env.REGISTRY }}/$GITHUB_REPOSITORY:latest
+
+      - name: Push
+        run: |
+          docker push ${{ env.REGISTRY }}/$GITHUB_REPOSITORY:$GITHUB_SHA
+          docker push ${{ env.REGISTRY }}/$GITHUB_REPOSITORY:latest
