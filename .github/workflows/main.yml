@@ -23,6 +23,8 @@ jobs:
       - name: Build (and tag)
         run: |
           docker build . \
+            --label org.opencontainers.image.created="$(date --rfc-3339=seconds --utc)" \
+            --label org.opencontainers.image.revision=$GITHUB_SHA \
             --tag ${{ env.REGISTRY }}/$GITHUB_REPOSITORY:$GITHUB_SHA \
             --tag ${{ env.REGISTRY }}/$GITHUB_REPOSITORY:latest
 
