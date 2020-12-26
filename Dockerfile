@@ -10,11 +10,11 @@ RUN addgroup -S app && \
 
 # Download AWS icon pack
 RUN wget https://d1.awsstatic.com/webteam/architecture-icons/AWS-Architecture-Icons_PNG_20200430.1f43d2dd713164497d228e77bd7542ff7b504bd4.zip -O aws-png-icons.zip && \
-    echo "1f43d2dd713164497d228e77bd7542ff7b504bd4  aws-png-icons.zip" > aws-png-icons.zip.sha1sum && \
-    sha1sum -c aws-png-icons.zip.sha1sum && \
-    mkdir /var/cache/aws-png-icons/ && \
-    unzip -jnq aws-png-icons.zip -d /var/cache/aws-png-icons/ && \
-    du -sc /var/cache/aws-png-icons/
+    echo "1f43d2dd713164497d228e77bd7542ff7b504bd4  aws-png-icons.zip" | sha1sum -c && \
+    mkdir -v /var/cache/aws-png-icons/ && \
+    unzip -jnq aws-png-icons.zip -x */.DS_Store */._* -d /var/cache/aws-png-icons/ && \
+    du -sh /var/cache/aws-png-icons/ && \
+    rm -v aws-png-icons.zip
 
 # Copy executables
 WORKDIR /etc/aws-cloudformation-graphviz
