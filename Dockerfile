@@ -18,18 +18,19 @@ RUN wget https://d1.awsstatic.com/webteam/architecture-icons/AWS-Architecture-Ic
 
 # Copy executables
 WORKDIR /etc/aws-cloudformation-graphviz
+COPY examples/ examples/
 COPY src/ src
 COPY templates/ templates
-
-# Run tests
-COPY tests.sh .
-RUN ./tests.sh
 
 # Link executables
 RUN ln -s /etc/aws-cloudformation-graphviz/src/aws-cloudformation-graphviz.sh /usr/bin/aws-cloudformation-graphviz && \
     ln -s /etc/aws-cloudformation-graphviz/src/graphviz/edge.sh /usr/bin/aws-cloudformation-graphviz-edge && \
     ln -s /etc/aws-cloudformation-graphviz/src/graphviz/graph.sh /usr/bin/aws-cloudformation-graphviz-graph && \
     ln -s /etc/aws-cloudformation-graphviz/src/graphviz/node.sh /usr/bin/aws-cloudformation-graphviz-node
+
+# Run tests
+COPY tests.sh .
+RUN ./tests.sh
 
 USER app
 WORKDIR /home/app
