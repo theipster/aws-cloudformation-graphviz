@@ -1,0 +1,39 @@
+service: my-service
+frameworkVersion: '2'
+
+provider:
+  name: aws
+  iamRoleStatements:
+    - Action: s3:PutObject
+      Effect: Allow
+      Resource:
+        Fn::Join:
+          - '/'
+          - - !GetAtt MyBucket.Arn
+            - '*'
+
+functions:
+  my:
+    environment:
+      BUCKET: !Ref MyBucket
+    events:
+      - stream:
+          type: dynamodb
+          arn: !GetAtt MyTable.StreamArn
+    image: 12345678.dkr.ecr.eu-west-2.amazonaws.com/my-image@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+
+resources:
+  Resources:
+    MyBucket:
+      Type: AWS::S3::Bucket
+    MyTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: hash
+            AttributeType: S
+        KeySchema:
+          - AttributeName: hash
+            KeyType: HASH
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
