@@ -1,5 +1,6 @@
 FROM alpine
-LABEL maintainer "Alan Ip <theipster@users.noreply.github.com>"
+
+LABEL org.opencontainers.image.authors="Alan Ip <theipster@users.noreply.github.com>"
 
 # Init user, install packages
 RUN addgroup -S app && \
