@@ -1,0 +1,95 @@
+name: releases
+
+env:
+  CI_REGISTRY: ghcr.io
+
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+
+jobs:
+  parse-versions:
+    name: 🔖 Parse versions
+    outputs:
+      semver: ${{ steps.semver-and-deployment-tags.outputs.semver }}
+      tags: ${{ steps.semver-and-deployment-tags.outputs.tags }}
+    runs-on: ubuntu-latest
+    steps:
+      - id: semver-and-deployment-tags
+        name: Semver and deployment tags
+        run: |
+          echo -n "Parsing semver... "
+          semver=$(echo ${{ github.ref }} | cut -d / -f 3-)
+          echo $semver
+          echo "::set-output name=semver::$semver"
+
+          echo "Parsing deployment tags..."
+          tags=$(seq 3 | tac | xargs -i sh -c "echo $semver | cut -d . -f -{}")
+          echo "$tags" | sed 's/\(.*\)/ - \1/'
+          echo "::set-output name=tags::$tags"
+
+  distribute-images:
+    env:
+      TAGS: ${{ needs.parse-versions.outputs.tags }}
+    name: 🚢 Distribute images
+    needs: parse-versions
+    runs-on: ubuntu-latest
+    steps:
+      - name: CI registry login
+        run: |
+          echo ${{ secrets.GHCR_TOKEN }} | \
+            docker login ${{ env.CI_REGISTRY }} -u ${{ github.repository_owner }} --password-stdin
+
+      - name: CI image pull
+        run: |
+          sourceImage=${{ format('{0}/{1}:{2}', env.CI_REGISTRY, github.repository, github.sha) }}
+          docker pull $sourceImage
+          echo "SOURCE_IMAGE=$sourceImage" >> $GITHUB_ENV
+
+      - name: CI publish (semver only)
+        run: |
+          echo "${{ env.TAGS }}" | \
+            sed 's/\(.*\)/${{ env.CI_REGISTRY }}\/${{ github.repository }}:\1/' | \
+            sed 's/\(.*\)/docker tag ${{ env.SOURCE_IMAGE }} \1; docker push \1/' | \
+            sh
+
+      - name: DockerHub login
+        run: |
+          echo ${{ secrets.DOCKERHUB_TOKEN }} | \
+            docker login -u theipster --password-stdin
+
+      - name: DockerHub publish (semver and latest)
+        run: |
+          echo -e "${{ env.TAGS }}\nlatest" | \
+            sed 's/\(.*\)/${{ github.repository }}:\1/' | \
+            sed 's/\(.*\)/docker tag ${{ env.SOURCE_IMAGE }} \1; docker push \1/' | \
+            sh
+
+  create-release:
+    name: 📣 Create release
+    needs:
+      - parse-versions
+      - distribute-images
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SEMVER: ${{ needs.parse-versions.outputs.semver }}
+        name: Create release
+        uses: actions/create-release@v1
+        with:
+          body: |
+            Release ${{ env.SEMVER }} is now available via DockerHub!
+
+            ```sh
+            docker pull ${{ format('{0}:{1}', github.repository, env.SEMVER) }}
+            ```
+
+            or alternatively, via GitHub Container Registry:
+
+            ```sh
+            docker pull ${{ format('{0}/{1}:{2}', env.CI_REGISTRY, github.repository, env.SEMVER) }}
+            ```
+          release_name: Release ${{ env.SEMVER }}
+          tag_name: ${{ env.SEMVER }}
