@@ -27,7 +27,7 @@ jobs:
           echo "Parsing deployment tags..."
           tags=$(seq 3 | tac | xargs -i sh -c "echo $semver | cut -d . -f -{}")
           echo "$tags" | sed 's/\(.*\)/ - \1/'
-          echo "::set-output name=tags::$tags"
+          echo "::set-output name=tags::${tags//$'\n'/'%0A'}"
 
   distribute-images:
     env:
@@ -50,8 +50,8 @@ jobs:
       - name: CI publish (semver only)
         run: |
           echo "${{ env.TAGS }}" | \
-            sed 's/\(.*\)/${{ env.CI_REGISTRY }}\/${{ github.repository }}:\1/' | \
-            sed 's/\(.*\)/docker tag ${{ env.SOURCE_IMAGE }} \1; docker push \1/' | \
+            sed 's#\(.*\)#${{ env.CI_REGISTRY }}/${{ github.repository }}:\1#' | \
+            sed 's#\(.*\)#docker tag ${{ env.SOURCE_IMAGE }} \1; docker push \1#' | \
             sh
 
       - name: DockerHub login
@@ -62,8 +62,8 @@ jobs:
       - name: DockerHub publish (semver and latest)
         run: |
           echo -e "${{ env.TAGS }}\nlatest" | \
-            sed 's/\(.*\)/${{ github.repository }}:\1/' | \
-            sed 's/\(.*\)/docker tag ${{ env.SOURCE_IMAGE }} \1; docker push \1/' | \
+            sed 's#\(.*\)#${{ github.repository }}:\1#' | \
+            sed 's#\(.*\)#docker tag ${{ env.SOURCE_IMAGE }} \1; docker push \1#' | \
             sh
 
   create-release:
